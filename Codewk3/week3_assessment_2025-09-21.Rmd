@@ -3,8 +3,12 @@ title: 'Week 3 Assessment: Data Visualization and Exploration with ggplot2'
 author: "Merhawi Kidane"
 date: "2025-09-20"
 output:
-  pdf_document:
-    latex_engine: xelatex
+  html_document:
+    theme: united
+    highlight: zenburn
+    toc: true
+    toc_float: true
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
@@ -28,18 +32,26 @@ library(viridis)        # viridis and viridisLite palettes
 
 
 # Import my dataset
-clean_NHANES <- import(here("week_3", "cleaned_NHANES.csv"))
+clean_NHANES <- import(here("Datawk3", "cleaned_NHANES.csv"))
 
 ```
+### NHANES Cleaned Data Viewer
+Use the interactive table below to sort, filter, and search through the dataset.
+```{r echo=FALSE}
+library(DT)
+datatable(clean_NHANES, 
+          options = list(pageLength = 10, scrollX = TRUE))
+```
 
-## Exercise 1: Reproducing and Arranging ggplot2 Figures
+## Exercise 1: Reproducing and Arranging ggplot2 Figures {.tabset}
 
 In this exercise, we will work with a cleaned version of the NHANES dataset (clean_NHANES.csv). The goal is to recreate two figures using ggplot2, using the meaningful column names and category labels in the cleaned dataset.
 
 These figures will demonstrate basic data visualization techniques using ggplot2, including mapping variables to aesthetics, grouping, and arranging multiple plots.
 
-**Plot 1**: 
+### Plot 1 and Plot 2
 
+**Plot1**
 * A histogram of age (in years).
 * The histogram will be grouped by gender, so that male and female participants are distinguishable.
 * Each bin will cover 5 years to match the original figure.
@@ -61,10 +73,10 @@ f1 <- clean_NHANES %>%
   theme(
     plot.title = element_text(hjust = 0, face = "bold")
   )
+f1
 ```
 
-**Plot 2**:
-
+**Plot2**
 * A bar graph of ethnicity.
 * The bars will be grouped by gender to show the distribution of males and females across ethnic groups.
 ```{r Plot2, echo=TRUE, fig.align='center', fig.width=6, fig.height=4, fig.cap="Bar chart of Ethnicity grouped by Gender"}
@@ -83,7 +95,10 @@ f2 <- clean_NHANES %>%
     plot.title = element_text(hjust = 0, face = "bold"),
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
+f2
 ```
+
+### Combined plots
 
 **Combine plots with cowplot (using the function plot_grid())**
 ```{r echo=TRUE, fig.cap="Combined display of Plot1 and Plot2, arranged into a single panel for comparison using plot grid." }
@@ -152,7 +167,7 @@ sum(is.na(clean_NHANES$age))
 ggsave(
   filename = "age\\_distribution.png",
   plot = age_histo,
-  path = here("week_3"),  # my folder
+  path = here("Reportswk3"),  # my folder
   width =6, height =4
 )
 ```
@@ -184,7 +199,7 @@ sum(is.na(clean_NHANES$gender))
 ggsave(
   filename = "gender distribution.png",
   plot = gender_bar,
-  path= here("week_3"),
+  path= here("Reportswk3"),
   width=6, height=4
 )
 ```
@@ -224,7 +239,7 @@ sum(is.na(clean_NHANES$ethnicity_1))
 ggsave(
   filename = "ethnicity1_distribution.png",
   plot = ethnicity1_bar,
-  path = here("week_3"),
+  path = here("Reportswk3"),
   width = 6, height = 4
 )
 ```
@@ -261,7 +276,7 @@ sum(is.na(clean_NHANES$ethnicity_2))
 ggsave(
   filename = "ethnicity2_distribution.png",
   plot = ethnicity2_bar,
-  path = here("week_3"),
+  path = here("Reportswk3"),
   width = 6, height = 4
 )
 
@@ -292,7 +307,7 @@ identical(newclean_NHANES, clean_NHANES)
 ## Exercise 3 - Improving ggplot figure
 ```{r}
 # Import the new data-set of the diet study
-diet_weight <- import(here("week_3", "diet.csv"))
+diet_weight <- import(here("diet.csv"))
 ```
 
 ### Limitations of the Weight-vs-Week Plot and Proposed Improvements
