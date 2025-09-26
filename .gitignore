@@ -1,4 +1,10 @@
+ Change-the-output-format-of-.rmd-file-to-html
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
 .DS_Store
 .Rhistory
 .RData
 .Rproj.user/
+main
