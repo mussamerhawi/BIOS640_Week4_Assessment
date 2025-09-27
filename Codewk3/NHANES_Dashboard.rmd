@@ -1,0 +1,103 @@
+---
+title: "NHANES Dashboard"
+author: "Merhawi Kidane"
+date: "2025-09-27"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load data manipulation packages
+library(tidyverse)
+library(ggplot2)
+library(rio)
+library(here)
+
+# Load flexdashboard
+library(flexdashboard)
+
+# Import the cleaned NHANES dataset
+cleaned_NHANES <- import(here("Datawk3","cleaned_NHANES.csv"))
+```
+
+```{r create_avg_sbp_column, echo=FALSE, results='hide'}
+# Create a new column for average SBP
+cleaned_NHANES <- cleaned_NHANES %>%
+  mutate(                       # compute the row-wise mean of the 4 SBP measurements
+      avg_sbp = rowMeans(
+      select(., systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4),
+      na.rm = TRUE        # ignore NAs so mean is computed if at least one reading is present
+    )
+  )
+``` 
+
+-----------
+
+Row {data-height=650}
+-------------------------------
+### A histogram of age (in years) grouped by gender
+#### Age Distribution by Gender
+This histogram shows the age distribution of NHANES participants, broken by gender.
+```{r Plot1, echo=FALSE, fig.align='center', fig.width=10, fig.height=8}
+f1 <- cleaned_NHANES %>%
+  ggplot(aes(x = age, fill = gender)) +
+  geom_histogram(
+    binwidth = 5, 
+    position = "dodge", 
+    color = "black", 
+    boundary= 0) +
+  labs(
+    title = "Histogram of Age by Gender",
+    x = "Age (Years)",
+    y = "Number of Participants",
+    fill = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0, face = "bold")
+  )
+f1
+
+```
+
+Row {data-height=350}
+------------------------------
+### Age ≥ 21 Gauge
+#### Adults 21 Years or Older
+The gauge below indicates the percentage of NHANES participants who are 21 years or older.
+```{r Gauge_21_greater, echo=FALSE}
+# Calculate percentage of individuals aged 21 years or older
+perc_21older <- mean(cleaned_NHANES$age >= 21) * 100
+
+# Create gauge
+gauge(
+  value = perc_21older,
+  min = 0,
+  max = 100,
+  symbol = '%',
+  gaugeSectors(
+    success = c(21, 100),  # green color for above 21
+    warning = c(10, 20),   # yellow for 10-20%
+    danger = c(0, 9)       # red for below 10%
+  )
+)
+```
+### Systolic BP > 120
+```{r value_sbp, echo=FALSE}
+
+
+# Calculate percentage of participants with average systolic BP > 120
+perc_sbp_greater <- mean(cleaned_NHANES$avg_sbp > 120, na.rm = TRUE) * 100
+
+# Display as a value box
+valueBox(
+  value = paste0(round(perc_sbp_greater, 1), "%"),
+  caption = "<span style='font-size:16px; font-weight:bold;'>Participants with Average Systolic BP > 120 mm Hg</span>",
+  icon = "fa-heartbeat",   # optional icon from FontAwesome
+  color = "red"            # choose your color
+)
+```
+
