@@ -14,7 +14,7 @@ Includes all R Markdown files and supporting scripts:
 
 Original and updated R Markdown reports (PDF and HTML outputs) of Assessment of the third week.
 
-Flexdashboard R Markdown file for the NHANES Dashboard
+Flexdashboard R Markdown file for the NHANES Dashboard and 
 R markdown file for the complex tables of NHANES clean data.
 
 ### reports/
