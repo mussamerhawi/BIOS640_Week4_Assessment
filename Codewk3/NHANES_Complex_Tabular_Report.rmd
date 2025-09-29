@@ -1,0 +1,174 @@
+---
+title: "NHANES Complex Tabular Report"
+author: "Merhawi Kidane"
+date: "2025-09-27"
+output:
+  pdf_document:
+    citation_package: biblatex
+bibliography: references.bib
+link-citations: true
+csl: chicago-author-date.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load packages
+library(tidyverse)
+library(kableExtra)
+
+# Import data
+library(rio)
+library(here)
+cleaned_NHANES <- import(here("Datawk3", "cleaned_NHANES.csv"))
+```
+# Complex Tabular Report of NHANES Dataset
+## Introduction
+The National Health and Nutrition Examination Survey (NHANES), conducted by the U.S. Centers for Disease Control and Prevention (CDC) through the National Center for Health Statistics (NCHS), is designed to assess the health and nutritional status of the U.S. population using interviews, physical examinations, and laboratory testing. The survey produces nationally representative data that inform public health research, policy, and program development[@nhanes]. For this analysis, we used data from three release cycles (2013–2014, 2015–2016, and 2017–2018), which are originally organized into two main groups: demographics and sample weights, covering information such as gender, age, race and Hispanic origin, education, marital status, country of birth, citizenship, and household/family income; and blood pressure measurements, including three consecutive systolic and diastolic readings, pulse, and related methodological information. Only a subset of variables from these two groups was selected and merged into a single cleaned dataset. During this process, the wave variable was created to consolidate the three survey cycles and subsequently renamed wave_id, with three year categories labeled 2015, 2016, and 2017, representing the original survey cycles. This allows each observation to be traced back to its original wave while combining the data from all three cycles into a cohesive dataset. In this report, we have generated tables summarizing key variables from the cleaned dataset to illustrate sample characteristics and blood pressure patterns across the survey waves.
+
+### 1.Sample Size and Male Distribution by Wave
+This table shows the total number of participants per wave, the number of males, and the percentage of males in each wave.
+```{r table_wave_gender, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Table of wave by gender
+table_wave_gender <- table(cleaned_NHANES$wave_id, cleaned_NHANES$gender)
+
+# Total sample size per wave (row sums)
+total_per_wave <- as.numeric(rowSums(table_wave_gender))
+
+# Male counts
+male_count <- as.numeric(table_wave_gender[, "Male"])
+
+# Male percentage
+male_percent <- round(100 * male_count / total_per_wave, 1)
+
+# Combine into final table
+final_table <- data.frame(
+  Wave = rownames(table_wave_gender),
+  Total = total_per_wave,
+  Male = male_count,
+  "Male (%)" = male_percent
+)
+
+# Display table in LaTeX for PDF
+kable(final_table, format = "latex", escape = FALSE,
+      col.names = c("Wave", "Total", "Male Count", "Male \\%"),
+      booktabs = TRUE,
+      caption = "Sample Size and Male Distribution by Wave") %>%
+  kable_styling(full_width = FALSE, latex_options = c("hold_position", "striped")) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#4F81BD") %>%
+  column_spec(4, bold = TRUE) 
+
+```  
+**Table 1**
+summarizes the sample size of participants in the NHANES dataset for each of the three survey waves (2013–2014, 2015–2016, and 2017–2018). It reports the total number of participants per wave as well as the count and percentage of male participants. Across all three waves, the proportion of male participants remains consistent at approximately 49%, reflecting an almost equal gender distribution within the survey population.
+
+
+
+### 2.Ethnicity Distribution by Wave
+The dataset contains two ethnicity variables: ethnicity_1 (RIDRETH1) and ethnicity_2 (RIDRETH3) [@nhanes].
+We chose ethnicity_2 because it provides a more detailed classification, separating Non-Hispanic Asian participants into their own category, unlike ethnicity_1 which groups them as "Other Race". This allows for a more precise analysis.
+
+```{r table_ethnicity_distribution, echo=FALSE, message=FALSE, warning=FALSE}
+
+## Step 1: Count participants by ethnicity within each wave
+ethnicity_counts <- table(cleaned_NHANES$wave_id,
+                          cleaned_NHANES$ethnicity_2)
+
+## Step 2: Calculate % of each ethnicity within each wave (row-wise)
+ethnicity_perc <- prop.table(ethnicity_counts, margin = 1) * 100
+ethnicity_perc <- round(ethnicity_perc, 1)   # round to 1 decimal
+
+## Step 3: Build the “n (p%)” strings as a matrix
+eth_mat <- do.call(
+  cbind,
+  lapply(seq_len(ncol(ethnicity_counts)), function(j) {
+    paste0(ethnicity_counts[, j], " (", ethnicity_perc[, j], "\\%)")
+  })
+)
+
+## Step 4: Convert matrix to data frame and add Wave column
+eth_df <- as.data.frame(eth_mat, stringsAsFactors = FALSE)
+colnames(eth_df) <- colnames(ethnicity_counts)
+ethnicity_combined <- cbind.data.frame(Wave = rownames(ethnicity_counts),
+                                       eth_df,
+                                       stringsAsFactors = FALSE)
+
+## Step 5: Apply styling to the whole last column
+last_col <- ncol(ethnicity_combined)
+ethnicity_combined[[last_col]] <- cell_spec(
+  ethnicity_combined[[last_col]],
+  format = "latex",
+  bold = TRUE
+)
+
+## Step 6: Display nicely with kable (LaTeX for PDF)
+kable(ethnicity_combined,
+      format = "latex",
+      booktabs = TRUE,
+      escape = FALSE,
+      caption = "Ethnicity distribution by wave (number and percentage of participants).",
+      align = c("l", rep("c", ncol(ethnicity_counts)))) %>%
+  kable_styling(full_width=FALSE, latex_options = c("hold_position", "striped")) %>%
+  row_spec(0, bold = TRUE, background = "#A7AAE1")
+      
+  
+```
+**Table 2** presents the distribution of NHANES participants by self-reported ethnicity across the three survey waves (2013–2014, 2015–2016, and 2017–2018). White participants consistently made up the largest proportion, although their share decreased slightly from 36.1% in 2015 to 30.7% in 2016, then increased to 34% in 2017. The proportion of Black participants remained relatively stable at around 22–23% across all waves. For Mexican and Other Hispanic groups, the percentage of Mexican participants rose from 17% in 2015 to 19.3% in 2016 before dropping to 14.8% in 2017, while “Other Hispanic” participants increased from 9.4% to 13.1% in 2016 and then decreased to 8.9% in 2017. Asian participants showed a gradual increase from 10.6% to 12.6%, and the “Other” category also increased slightly from 4.6% to 6.9% by 2017. Overall, the table highlights the diversity of the NHANES sample and the small shifts in ethnic composition across the three survey waves.
+
+
+### 3.Summary Statistics of Average Systolic Blood Pressure by Wave
+This table provides minimum, median, mean, maximum, and standard deviation 
+of average systolic blood pressure for each NHANES wave.
+
+**Average Systolic Blood Pressure by Wave**
+
+To prepare the data for analysis (the next table), a new variable representing the average systolic blood pressure (SBP) was created for each participant. This was computed as the mean of the four available SBP measurements, ignoring missing values so that the average could still be calculated if at least one reading was present. This step ensures that each participant has a single, representative SBP value for subsequent summary statistics and tables.
+
+```{r create_avg_sbp_column, echo=FALSE, results='hide'}
+# Create a new column for average SBP
+cleaned_NHANES <- cleaned_NHANES %>%
+  mutate(                       # compute the row-wise mean of the 4 SBP measurements
+      avg_sbp = rowMeans(
+      select(., systolic_bp_1, systolic_bp_2, systolic_bp_3, systolic_bp_4),
+      na.rm = TRUE        # ignore NAs so mean is computed if at least one reading is present
+    )
+  )
+```
+
+```{r Table_summary_statistics_SBP, echo=FALSE, message=FALSE, warning=FALSE}
+
+# Step 1: Compute summary statistics by wave
+summary_stat_nhanes <- cleaned_NHANES %>%
+  group_by(wave_id) %>%
+  summarise(
+    Min = round(min(avg_sbp, na.rm = TRUE), 1),
+    Median = round(median(avg_sbp, na.rm = TRUE), 1),
+    Mean = round(mean(avg_sbp, na.rm = TRUE), 1),
+    Max = round(max(avg_sbp, na.rm = TRUE), 1),
+    SD = round(sd(avg_sbp, na.rm = TRUE), 1),
+    .groups = "drop"       # drop grouping for clean DF
+  ) %>%
+  as.data.frame(stringsAsFactors = FALSE)   # ensure base data frame
+
+# Step 2: Rename first column to avoid underscores (LaTeX safe)
+colnames(summary_stat_nhanes)[1] <- "Wave"
+
+# Step 3: Create LaTeX table with kable
+kable(summary_stat_nhanes,
+      format = "latex",
+      booktabs = TRUE,       
+      caption = "Summary statistics of average systolic blood pressure by wave.",
+      align = c("l", rep("c", 5))) %>%     # left-align Wave, center-align numeric stats
+  kable_styling(latex_options = c("hold_position", "striped")) %>%
+  row_spec(0, bold = TRUE, background = "#D3EAF2") %>%         # Highlight header row
+  column_spec(4, bold = TRUE)              # Emphasize the Mean column for easy reference
+
+```
+
+**Table 3** summarizes the distribution of average systolic blood pressure across the three NHANES survey waves. Median and mean systolic pressures remain relatively stable over time, hovering around 115–118 mmHg for the median and 118–122 mmHg for the mean. The minimum values rise slightly from 64.7 mmHg in the 2015 wave to over 72 mmHg in 2017, while the maximum recorded pressures are consistently high (228–234 mmHg). Standard deviations (18–20 mmHg) indicate a comparable spread of values across waves. Overall, the figures show that the distribution of systolic blood pressure is very similar across the three survey cycles, with only small differences from year to year.
+
+## Conclusion 
+In summary, the cleaned NHANES dataset provides a clear overview of the study population across three survey waves (2015, 2016, 2017). Table 1 shows that the overall sample size is fairly consistent across waves, with a slight decrease in 2016. Table 2 highlights the distribution of ethnic groups, with Non-Hispanic White participants representing the largest proportion in all three waves and the other ethnic groups remaining relatively stable. Table 3 presents the summary statistics of average systolic blood pressure, demonstrating a similar distribution across waves with minor variations in mean and median values. Overall, the data distributions across waves appear consistent, supporting comparability for analyses across the three survey cycles.
+
+## Packages used
+The tables in this report were generated using the kableExtra package in R, which allows for advanced table formatting and LaTeX integration [@kableExtra]. Other packages used for data manipulation, such as dplyr, have been employed in previous exercises and are not cited separately here.
